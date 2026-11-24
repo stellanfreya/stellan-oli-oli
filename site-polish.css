@@ -567,20 +567,18 @@ html.theme-dark #accountDisplayName {
 .theme-dark .era-quiz-form fieldset,
 .theme-dark .era-quiz-result { background: #302a32; color: var(--ink); }
 .theme-dark .era-quiz .section-note { color: #d1c4b7; }
-.holiday-section { background: #e8dfd2; }
+.holiday-section { padding: 34px 0; background: transparent; color: var(--paper); }
+.holiday-section .section-head { margin-bottom: 20px; }
 .holiday-countdowns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.holiday-card { padding: 22px; border: 1px solid var(--line); background: var(--paper); }
-.holiday-card .label { color: var(--red); }
+.holiday-card { padding: 22px; border: 1px solid #f5efe544; background: #ffffff0b; color: #f5efe5; }
+.holiday-card .label { color: var(--pink); }
 .holiday-card h3 { margin: 12px 0 6px; font: 600 23px var(--serif); }
-.holiday-card p { min-height: 32px; margin: 0 0 20px; font: 10px/1.5 var(--mono); color: #65574f; }
+.holiday-card p { min-height: 32px; margin: 0 0 20px; font: 10px/1.5 var(--mono); color: #d1c4b7; }
 .holiday-clock { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .holiday-unit { text-align: center; }
 .holiday-unit strong { display: block; font: 600 25px var(--serif); color: var(--red); }
 .holiday-unit span { font: 8px var(--mono); text-transform: uppercase; }
-.theme-dark .holiday-section { background: #29232a; }
-.theme-dark .holiday-card { background: #302a32; color: var(--ink); }
-.theme-dark .holiday-card p,
-.theme-dark .holiday-section .section-note { color: #d1c4b7; }
+.holiday-section .section-note { color: #d1c4b7; }
 .reels-section { background: #211d20; color: #f5efe5; }
 .reels-section .section-note { color: #d1c4b7; }
 .reels-feed { display: flex; flex-direction: column; gap: 18px; width: min(100%, 390px); height: min(76vh, 760px); margin: 0 auto; overflow-y: auto; overscroll-behavior: contain; scroll-snap-type: y mandatory; scrollbar-color: #b8798b #ffffff17; }
@@ -589,6 +587,8 @@ html.theme-dark #accountDisplayName {
 .reel-card p { margin: 0; padding: 12px 14px; font: 9px var(--mono); text-transform: uppercase; letter-spacing: .08em; }
 .reels-credit { margin: 16px 0 0; text-align: center; font: 9px/1.5 var(--mono); color: #c6b9ad; }
 .reel-nav-link { white-space: nowrap; }
+.reels-shortcut { position: fixed; right: 20px; bottom: 20px; z-index: 20; display: grid; width: 52px; height: 52px; place-items: center; border: 1px solid #fff9; border-radius: 50%; background: #754858; color: #fff; box-shadow: 0 8px 24px #0005; font: 16px var(--sans); }
+.reels-shortcut:hover { background: #92596d; transform: translateY(-2px); }
 .theme-dark .pill,
 .theme-dark .auth-tab.active {
   border-color: #c17f91;
@@ -613,6 +613,7 @@ html.theme-dark #accountDisplayName {
   .reels-feed { height: min(72vh, 700px); }
   .reel-card { flex-basis: min(68vh, 640px); }
   .reel-player { min-height: 318px; }
+  .reels-shortcut { right: 14px; bottom: 14px; }
 }
 @keyframes searchIn {
   from { opacity: 0; transform: translateY(-14px) scale(.99); }

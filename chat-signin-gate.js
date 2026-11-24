@@ -1,5 +1,10 @@
 (() => {
   const isSignedIn = () => Boolean(window.getCommunityChatContext?.()?.user);
+  const authIntro = document.querySelector('#authModal .auth-panel > p');
+  if (authIntro) {
+    authIntro.textContent = 'Sign in or join to save favorites, send messages, attach files, and share GIFs with other fans.';
+  }
+
   const openSignIn = () => {
     const modal = document.querySelector('#authModal');
     if (!modal) return;

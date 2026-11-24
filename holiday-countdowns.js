@@ -20,7 +20,9 @@
       <div class="section-note">Local countdowns to<br>your favorite dates.</div>
     </div>
     <div class="holiday-countdowns"></div>`;
-  events.after(section);
+  const heading = events.querySelector('.section-head');
+  if (heading) heading.after(section);
+  else events.prepend(section);
 
   const startOfToday = () => {
     const date = new Date();

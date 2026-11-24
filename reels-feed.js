@@ -52,4 +52,12 @@
     link.textContent = '▶ reels';
     nav.append(link);
   }
+
+  const shortcut = document.createElement('a');
+  shortcut.href = '#reels';
+  shortcut.className = 'reels-shortcut';
+  shortcut.setAttribute('aria-label', 'Jump to the Olivia video feed');
+  shortcut.title = 'Olivia video feed';
+  shortcut.textContent = '▶';
+  document.body.append(shortcut);
 })();
