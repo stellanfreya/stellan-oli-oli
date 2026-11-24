@@ -567,6 +567,28 @@ html.theme-dark #accountDisplayName {
 .theme-dark .era-quiz-form fieldset,
 .theme-dark .era-quiz-result { background: #302a32; color: var(--ink); }
 .theme-dark .era-quiz .section-note { color: #d1c4b7; }
+.holiday-section { background: #e8dfd2; }
+.holiday-countdowns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.holiday-card { padding: 22px; border: 1px solid var(--line); background: var(--paper); }
+.holiday-card .label { color: var(--red); }
+.holiday-card h3 { margin: 12px 0 6px; font: 600 23px var(--serif); }
+.holiday-card p { min-height: 32px; margin: 0 0 20px; font: 10px/1.5 var(--mono); color: #65574f; }
+.holiday-clock { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.holiday-unit { text-align: center; }
+.holiday-unit strong { display: block; font: 600 25px var(--serif); color: var(--red); }
+.holiday-unit span { font: 8px var(--mono); text-transform: uppercase; }
+.theme-dark .holiday-section { background: #29232a; }
+.theme-dark .holiday-card { background: #302a32; color: var(--ink); }
+.theme-dark .holiday-card p,
+.theme-dark .holiday-section .section-note { color: #d1c4b7; }
+.reels-section { background: #211d20; color: #f5efe5; }
+.reels-section .section-note { color: #d1c4b7; }
+.reels-feed { display: flex; flex-direction: column; gap: 18px; width: min(100%, 390px); height: min(76vh, 760px); margin: 0 auto; overflow-y: auto; overscroll-behavior: contain; scroll-snap-type: y mandatory; scrollbar-color: #b8798b #ffffff17; }
+.reel-card { flex: 0 0 min(72vh, 700px); min-height: 360px; scroll-snap-align: start; overflow: hidden; border: 1px solid #ffffff2b; border-radius: 20px; background: #171316; }
+.reel-player { display: block; width: 100%; height: calc(100% - 42px); min-height: 318px; border: 0; background: #000; }
+.reel-card p { margin: 0; padding: 12px 14px; font: 9px var(--mono); text-transform: uppercase; letter-spacing: .08em; }
+.reels-credit { margin: 16px 0 0; text-align: center; font: 9px/1.5 var(--mono); color: #c6b9ad; }
+.reel-nav-link { white-space: nowrap; }
 .theme-dark .pill,
 .theme-dark .auth-tab.active {
   border-color: #c17f91;
@@ -587,6 +609,10 @@ html.theme-dark #accountDisplayName {
   .tour-countdown-unit { min-width: 0; }
   .tour-countdown-unit strong { font-size: 24px; }
   .era-quiz-form { grid-template-columns: 1fr; }
+  .holiday-countdowns { grid-template-columns: 1fr; }
+  .reels-feed { height: min(72vh, 700px); }
+  .reel-card { flex-basis: min(68vh, 640px); }
+  .reel-player { min-height: 318px; }
 }
 @keyframes searchIn {
   from { opacity: 0; transform: translateY(-14px) scale(.99); }
