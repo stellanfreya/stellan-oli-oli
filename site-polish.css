@@ -551,6 +551,22 @@ html.theme-dark #accountDisplayName {
 .tour-countdown-unit strong { display: block; font: 600 28px var(--serif); color: var(--pink); }
 .tour-countdown-unit span { font: 8px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
 .theme-dark .tour-countdown { border-color: #ffffff2b; background: #ffffff08; }
+.era-quiz { background: #eddce5; }
+.era-quiz-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.era-quiz-form fieldset { display: grid; align-content: start; gap: 10px; margin: 0; padding: 18px; border: 1px solid var(--line); background: var(--paper); }
+.era-quiz-form legend { padding: 0 5px; font: 600 18px var(--serif); }
+.era-quiz-form label { display: flex; align-items: flex-start; gap: 9px; font: 11px/1.5 var(--mono); cursor: pointer; }
+.era-quiz-form input { accent-color: var(--red); flex: 0 0 auto; margin: 2px 0 0; }
+.era-quiz-form .pill { justify-self: start; border: 0; cursor: pointer; }
+.era-quiz-result { margin-top: 20px; padding: 22px; border: 1px solid var(--line); background: var(--paper); }
+.era-quiz-result[hidden] { display: none; }
+.era-quiz-result h3 { margin: 8px 0; font: italic 600 28px var(--serif); }
+.era-quiz-result p { max-width: 650px; font: 12px/1.6 var(--mono); }
+.era-quiz-again { border: 0; padding: 0; background: none; color: var(--red); font: 10px var(--mono); text-decoration: underline; cursor: pointer; }
+.theme-dark .era-quiz { background: #29232a; }
+.theme-dark .era-quiz-form fieldset,
+.theme-dark .era-quiz-result { background: #302a32; color: var(--ink); }
+.theme-dark .era-quiz .section-note { color: #d1c4b7; }
 .theme-dark .pill,
 .theme-dark .auth-tab.active {
   border-color: #c17f91;
@@ -570,6 +586,7 @@ html.theme-dark #accountDisplayName {
   .tour-countdown-clock { width: 100%; gap: 4px; }
   .tour-countdown-unit { min-width: 0; }
   .tour-countdown-unit strong { font-size: 24px; }
+  .era-quiz-form { grid-template-columns: 1fr; }
 }
 @keyframes searchIn {
   from { opacity: 0; transform: translateY(-14px) scale(.99); }
