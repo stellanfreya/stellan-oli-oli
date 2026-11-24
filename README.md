@@ -1,6 +1,6 @@
 # Stellan Oli Oli
 
-A fan-made Olivia Rodrigo site with a mood-based song finder, an eight-photo diary with a full-size viewer, animated scroll progress and section navigation, an album guide, live dates, member profiles, private direct messages with file and GIF sharing, online/away/do-not-disturb/offline presence modes, and a group chat with file attachments, GIF search, and reactions.
+A fan-made Olivia Rodrigo site with an animated site-wide search, a mood-based song finder, an eight-photo diary with a full-size viewer, scroll progress and image motion, an album guide, live dates, member profiles, private direct messages with file and GIF sharing, online/away/do-not-disturb/offline presence modes, and a group chat with file attachments, GIF search, and reactions.
 
 **This is an unofficial fan project and is not affiliated with Olivia Rodrigo or her team.**
 
