@@ -12,7 +12,7 @@ The fan-site Supabase project has been created in the Mumbai region. Its URL and
 
 Once the site is published, set the Supabase Auth **Site URL** and **Redirect URLs** to:
 
-- `https://xilvym-code.github.io/oracle-rodrigo-fan-zine/`
+- `https://stellanfreya.github.io/stellan-oli-oli/`
 
 The address must match the final Pages URL. The site passes the current page URL as the email confirmation return address.
 
@@ -28,12 +28,12 @@ For dependable email delivery to the public, configure a production SMTP sender 
 
 ## Publish with GitHub Pages
 
-1. Create a new **public** repository named `oracle-rodrigo-fan-zine` under `xilvym-code`. Turn on **Add README** so the repository has a `main` branch.
-2. Upload the contents of this folder to the repository root, including `.github/workflows/pages.yml` and the `images/` and `supabase/` folders.
-3. In **Settings → Pages**, choose **GitHub Actions** as the source.
-4. The workflow publishes each push to `main`. Expected site URL: `https://xilvym-code.github.io/oracle-rodrigo-fan-zine/`.
+1. Use the existing **public** repository `stellanfreya/stellan-oli-oli`.
+2. Keep the site files, including `images/` and `supabase/`, at the repository root.
+3. GitHub Pages is configured to publish the `main` branch from `/`.
+4. Site URL: `https://stellanfreya.github.io/stellan-oli-oli/`.
 
-The site footer links to `https://github.com/xilvym-code/oracle-rodrigo-fan-zine`.
+The site footer links to `https://github.com/stellanfreya/stellan-oli-oli`.
 
 ## Photo credits
 

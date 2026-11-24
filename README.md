@@ -6,9 +6,10 @@ A fan-made Olivia Rodrigo site with an animated site-wide search, a scroll-react
 
 ## Publish
 
-Upload this folder's contents to the root of the public `oracle-rodrigo-fan-zine` repository, then set **Settings → Pages → Build and deployment → GitHub Actions**. A workflow in `.github/workflows/pages.yml` publishes the static site from `main`.
+The site is published from the public `stellanfreya/stellan-oli-oli` repository.
 
-Expected address: <https://xilvym-code.github.io/oracle-rodrigo-fan-zine/>
+Website: <https://stellanfreya.github.io/stellan-oli-oli/>
+Repository: <https://github.com/stellanfreya/stellan-oli-oli>
 
 ## Accounts
 
