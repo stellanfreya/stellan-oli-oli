@@ -135,13 +135,30 @@
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const motionDisabled = document.documentElement.classList.contains('account-motion-off');
   const photos = [...document.querySelectorAll('.photo img')];
+  if (!reduceMotion && !motionDisabled && photos.length) {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'ambient-backdrop';
+    backdrop.setAttribute('aria-hidden', 'true');
+    const backdropImage = document.createElement('img');
+    backdropImage.src = photos[0].currentSrc || photos[0].src;
+    backdropImage.alt = '';
+    backdropImage.decoding = 'async';
+    backdrop.append(backdropImage);
+    document.body.prepend(backdrop);
+  }
   if (reduceMotion || motionDisabled || !photos.length) return;
 
+  const backdrop = document.querySelector('.ambient-backdrop');
   let frame = 0;
   const updatePhotoMotion = () => {
     if (frame) return;
     frame = requestAnimationFrame(() => {
       frame = 0;
+      if (backdrop) {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = maxScroll > 0 ? Math.min(1, window.scrollY / maxScroll) : 0;
+        backdrop.style.setProperty('--ambient-scroll-shift', `${((.5 - progress) * 72).toFixed(1)}px`);
+      }
       const viewportCenter = window.innerHeight * 0.52;
       for (const image of photos) {
         const bounds = image.getBoundingClientRect();
