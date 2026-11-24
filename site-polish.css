@@ -372,6 +372,28 @@ body .chat-dm-message.is-mine { background: #e7d0d5; }
     linear-gradient(160deg, #19171c, #211d24);
   scrollbar-color: #775663 #211d24;
 }
+#community .chat-board-empty {
+  display: grid;
+  min-height: 260px;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 28px;
+  list-style: none;
+  color: #f5f0f2;
+  text-align: center;
+}
+#community .chat-board-empty-mark { color: #d996a8; font-size: 30px; }
+#community .chat-board-empty strong {
+  font: 10px var(--mono);
+  letter-spacing: .16em;
+}
+#community .chat-board-empty p {
+  max-width: 46ch;
+  margin: 0;
+  color: #b7aeb6;
+  font: 11px/1.7 var(--mono);
+}
 #community .chat-message {
   max-width: min(88%, 740px);
   padding: 14px 16px;
