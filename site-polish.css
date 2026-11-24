@@ -522,6 +522,7 @@ body .photo-viewer {
   background: #302a32;
   color: #f5efe5;
 }
+.theme-dark .note { background: #242027; }
 .theme-dark .marquee-track { color: #f5efe5; }
 .theme-dark .marquee-track b { color: #fa7768; }
 .theme-dark .pill,
