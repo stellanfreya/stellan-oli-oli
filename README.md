@@ -1,6 +1,6 @@
 # Stellan Oli Oli
 
-A fan-made Olivia Rodrigo site with an animated photo diary, album guide, live dates, member profiles, private direct messages with file and GIF sharing, online/away/do-not-disturb/offline presence modes, and a redesigned group chat with file attachments, GIF search, and reactions.
+A fan-made Olivia Rodrigo site with a mood-based song finder, an eight-photo diary with a full-size viewer, animated scroll progress and section navigation, an album guide, live dates, member profiles, private direct messages with file and GIF sharing, online/away/do-not-disturb/offline presence modes, and a group chat with file attachments, GIF search, and reactions.
 
 **This is an unofficial fan project and is not affiliated with Olivia Rodrigo or her team.**
 
@@ -16,4 +16,4 @@ The site uses Supabase Auth with email confirmation and no phone verification. F
 
 ## Photos
 
-The gallery includes five distinct local photos with source and license credits in each caption. Four images by Raph_PH are licensed under CC BY 2.0; one is licensed under CC BY 4.0.
+The gallery includes five local concert photos and three White House photos hosted by Wikimedia Commons. The concert photos include source and license credits; the White House photos are public-domain U.S. government works and link to their Commons source pages.
