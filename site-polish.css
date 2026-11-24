@@ -525,7 +525,14 @@ body .photo-viewer {
 .theme-dark .note { background: #242027; }
 .theme-dark .marquee-track { color: #f5efe5; }
 .theme-dark .marquee-track b { color: #fa7768; }
-.theme-dark .account-card input { color: var(--ink); }
+html.theme-dark #accountDisplayName {
+  background: #1e1a20;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+}
+.theme-dark .gallery { background: #242027; }
+.theme-dark .gallery .section-note { color: #d1c4b7; }
 .theme-dark .pill,
 .theme-dark .auth-tab.active {
   border-color: #c17f91;
