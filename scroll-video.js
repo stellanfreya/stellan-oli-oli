@@ -13,32 +13,44 @@
     <iframe title="Olivia Rodrigo · traitor · Official Video" allow="autoplay; encrypted-media; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
     <div class="scroll-video-controls">
       <span>Official video</span>
-      <button class="scroll-video-mute" type="button" aria-label="Unmute video" aria-pressed="false">Unmute</button>
+      <div class="scroll-video-volume">
+        <button class="scroll-video-mute" type="button" aria-label="Unmute video" aria-pressed="false">Unmute</button>
+        <input class="scroll-video-volume-slider" type="range" min="0" max="100" step="5" value="40" aria-label="Video volume">
+      </div>
     </div>
   `;
   document.body.append(player);
 
   const iframe = player.querySelector('iframe');
   const muteButton = player.querySelector('.scroll-video-mute');
+  const volumeSlider = player.querySelector('.scroll-video-volume-slider');
   let muted = true;
+  let volume = Number(volumeSlider.value);
   let started = false;
   let playerReady = false;
   let visible = false;
   let dismissed = false;
   let scrollFrame = 0;
 
-  const sendCommand = command => {
+  const sendCommand = (command, args = []) => {
     if (!playerReady) return;
     iframe.contentWindow.postMessage(JSON.stringify({
       event: 'command',
       func: command,
-      args: []
+      args
     }), playerOrigin);
   };
 
   const syncPlayback = () => {
+    sendCommand('setVolume', [volume]);
     sendCommand(muted ? 'mute' : 'unMute');
     sendCommand(visible ? 'playVideo' : 'pauseVideo');
+  };
+
+  const updateMuteButton = () => {
+    muteButton.textContent = muted ? 'Unmute' : 'Mute';
+    muteButton.setAttribute('aria-label', `${muted ? 'Unmute' : 'Mute'} video`);
+    muteButton.setAttribute('aria-pressed', String(!muted));
   };
 
   iframe.addEventListener('load', () => {
@@ -81,10 +93,19 @@
   }, { passive: true });
 
   muteButton.addEventListener('click', () => {
+    if (muted && volume === 0) {
+      volume = 40;
+      volumeSlider.value = String(volume);
+    }
     muted = !muted;
-    muteButton.textContent = muted ? 'Unmute' : 'Mute';
-    muteButton.setAttribute('aria-label', `${muted ? 'Unmute' : 'Mute'} video`);
-    muteButton.setAttribute('aria-pressed', String(!muted));
+    updateMuteButton();
+    syncPlayback();
+  });
+
+  volumeSlider.addEventListener('input', () => {
+    volume = Number(volumeSlider.value);
+    muted = volume === 0;
+    updateMuteButton();
     syncPlayback();
   });
 

@@ -3,7 +3,6 @@
   if (!gallery) return;
 
   const videos = [
-    { playlistId: 'UUxE5jEls-T0QtlTHT8lI1lw', title: 'All official channel uploads' },
     { id: 'ZmDBbnmKpqQ', title: 'drivers license · Official Video' },
     { id: 'RlPNh_PBZb4', title: 'vampire · Official Video' },
     { id: 'ZsJ-BHohXRI', title: 'get him back! · Official Video' },
@@ -33,9 +32,7 @@
     card.className = 'reel-card';
     const frame = document.createElement('iframe');
     frame.className = 'reel-player';
-    frame.src = video.playlistId
-      ? `https://www.youtube-nocookie.com/embed/videoseries?list=${video.playlistId}&playsinline=1&rel=0`
-      : `https://www.youtube-nocookie.com/embed/${video.id}?playsinline=1&rel=0`;
+    frame.src = `https://www.youtube-nocookie.com/embed/${video.id}?playsinline=1&rel=0`;
     frame.title = `Olivia Rodrigo · ${video.title}`;
     frame.loading = 'lazy';
     frame.referrerPolicy = 'strict-origin-when-cross-origin';

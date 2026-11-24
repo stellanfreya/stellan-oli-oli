@@ -596,9 +596,11 @@ html.theme-dark #accountDisplayName {
 .scroll-video-heading { margin-bottom: 10px; color: #f4bdc5; }
 .scroll-video-player iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 10px; background: #000; }
 .scroll-video-controls { margin-top: 10px; color: #d1c4b7; }
+.scroll-video-volume { display: flex; align-items: center; gap: 8px; }
 .scroll-video-close, .scroll-video-mute { border: 1px solid #f5efe566; border-radius: 20px; background: transparent; color: #f5efe5; cursor: pointer; font: 9px var(--mono); text-transform: uppercase; }
 .scroll-video-close { display: grid; width: 27px; height: 27px; place-items: center; font: 17px var(--sans); }
 .scroll-video-mute { padding: 8px 12px; }
+.scroll-video-volume-slider { width: 88px; accent-color: #f4bdc5; cursor: pointer; }
 .scroll-video-close:hover, .scroll-video-mute:hover { border-color: #f4bdc5; background: #754858; }
 .theme-dark .pill,
 .theme-dark .auth-tab.active {
