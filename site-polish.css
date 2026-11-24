@@ -517,6 +517,26 @@ body .photo-viewer {
 .theme-dark .site-search-input { color: var(--ink); }
 .theme-dark .site-search-result:hover, .theme-dark .site-search-result:focus-visible { background: #ffffff12; }
 .theme-dark .site-search-close { border-color: #ffffff2b; background: #ffffff0d; color: var(--ink); }
+.theme-dark .marquee {
+  border-color: #ffffff25;
+  background: #302a32;
+  color: #f5efe5;
+}
+.theme-dark .marquee-track { color: #f5efe5; }
+.theme-dark .marquee-track b { color: #fa7768; }
+.theme-dark .pill,
+.theme-dark .auth-tab.active {
+  border-color: #c17f91;
+  background: #754858;
+  color: #fff;
+}
+.theme-dark .pill:hover,
+.theme-dark .auth-tab.active:hover { background: #92596d; color: #fff; }
+.theme-dark .auth-tab:not(.active) {
+  border-color: #f5efe544;
+  background: transparent;
+  color: #f5efe5;
+}
 :focus-visible { outline: 2px solid #a34a5c; outline-offset: 3px; }
 @keyframes searchIn {
   from { opacity: 0; transform: translateY(-14px) scale(.99); }
