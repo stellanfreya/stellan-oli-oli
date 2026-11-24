@@ -590,6 +590,16 @@ html.theme-dark #accountDisplayName {
 .reel-nav-link { white-space: nowrap; }
 .reels-shortcut { position: fixed; right: 20px; bottom: 20px; z-index: 20; display: grid; width: 52px; height: 52px; place-items: center; border: 1px solid #fff9; border-radius: 50%; background: #754858; color: #fff; box-shadow: 0 8px 24px #0005; font: 16px var(--sans); }
 .reels-shortcut:hover { background: #92596d; transform: translateY(-2px); }
+.scroll-video-player { position: fixed; right: 22px; bottom: 86px; z-index: 25; width: min(340px, calc(100vw - 32px)); padding: 12px; border: 1px solid #ffffff3d; border-radius: 18px; background: #211d20; color: #f5efe5; box-shadow: 0 16px 48px #0006; opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(14px) scale(.98); transition: opacity .25s ease, transform .25s ease, visibility .25s; }
+.scroll-video-player.is-visible { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0) scale(1); }
+.scroll-video-heading, .scroll-video-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 9px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.scroll-video-heading { margin-bottom: 10px; color: #f4bdc5; }
+.scroll-video-player iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 10px; background: #000; }
+.scroll-video-controls { margin-top: 10px; color: #d1c4b7; }
+.scroll-video-close, .scroll-video-mute { border: 1px solid #f5efe566; border-radius: 20px; background: transparent; color: #f5efe5; cursor: pointer; font: 9px var(--mono); text-transform: uppercase; }
+.scroll-video-close { display: grid; width: 27px; height: 27px; place-items: center; font: 17px var(--sans); }
+.scroll-video-mute { padding: 8px 12px; }
+.scroll-video-close:hover, .scroll-video-mute:hover { border-color: #f4bdc5; background: #754858; }
 .theme-dark .pill,
 .theme-dark .auth-tab.active {
   border-color: #c17f91;
@@ -615,6 +625,7 @@ html.theme-dark #accountDisplayName {
   .reel-card { flex-basis: min(68vh, 640px); }
   .reel-player { min-height: 318px; }
   .reels-shortcut { right: 14px; bottom: 14px; }
+  .scroll-video-player { right: 12px; bottom: 78px; padding: 10px; }
 }
 @keyframes searchIn {
   from { opacity: 0; transform: translateY(-14px) scale(.99); }
