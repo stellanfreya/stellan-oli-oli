@@ -1,6 +1,4 @@
 (() => {
-  const videoId = 'CRrf3h9vhp8';
-  const playerOrigin = 'https://www.youtube-nocookie.com';
   const player = document.createElement('aside');
   player.className = 'scroll-video-player';
   player.setAttribute('aria-label', 'Olivia Rodrigo traitor video player');
@@ -10,10 +8,14 @@
       <span>Now playing · traitor</span>
       <button class="scroll-video-close" type="button" aria-label="Hide video">×</button>
     </div>
-    <iframe title="Olivia Rodrigo · traitor · Official Video" allow="autoplay; encrypted-media; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    <video class="scroll-video" playsinline preload="none" aria-label="Olivia Rodrigo · traitor · Official Video">
+      <source src="./assets/traitor.mp4" type="video/mp4">
+      Your browser does not support HTML video.
+    </video>
     <div class="scroll-video-controls">
-      <span>Official video</span>
+      <span>Hosted video · no ads</span>
       <div class="scroll-video-volume">
+        <button class="scroll-video-play" type="button" aria-label="Play video">Play</button>
         <button class="scroll-video-mute" type="button" aria-label="Unmute video" aria-pressed="false">Unmute</button>
         <input class="scroll-video-volume-slider" type="range" min="0" max="100" step="5" value="40" aria-label="Video volume">
       </div>
@@ -21,31 +23,15 @@
   `;
   document.body.append(player);
 
-  const iframe = player.querySelector('iframe');
+  const video = player.querySelector('video');
+  const playButton = player.querySelector('.scroll-video-play');
   const muteButton = player.querySelector('.scroll-video-mute');
   const volumeSlider = player.querySelector('.scroll-video-volume-slider');
   let muted = true;
-  let volume = Number(volumeSlider.value);
-  let started = false;
-  let playerReady = false;
+  let volume = Number(volumeSlider.value) / 100;
   let visible = false;
   let dismissed = false;
   let scrollFrame = 0;
-
-  const sendCommand = (command, args = []) => {
-    if (!playerReady) return;
-    iframe.contentWindow.postMessage(JSON.stringify({
-      event: 'command',
-      func: command,
-      args
-    }), playerOrigin);
-  };
-
-  const syncPlayback = () => {
-    sendCommand('setVolume', [volume]);
-    sendCommand(muted ? 'mute' : 'unMute');
-    sendCommand(visible ? 'playVideo' : 'pauseVideo');
-  };
 
   const updateMuteButton = () => {
     muteButton.textContent = muted ? 'Unmute' : 'Mute';
@@ -53,11 +39,26 @@
     muteButton.setAttribute('aria-pressed', String(!muted));
   };
 
-  iframe.addEventListener('load', () => {
-    if (!started) return;
-    playerReady = true;
-    syncPlayback();
-  });
+  const updatePlayButton = () => {
+    const playing = !video.paused && !video.ended;
+    playButton.textContent = playing ? 'Pause' : 'Play';
+    playButton.setAttribute('aria-label', `${playing ? 'Pause' : 'Play'} video`);
+  };
+
+  const syncPlayback = () => {
+    video.muted = muted;
+    video.volume = volume;
+    if (visible) {
+      video.play().catch(() => updatePlayButton());
+    } else {
+      video.pause();
+    }
+    updatePlayButton();
+  };
+
+  video.addEventListener('play', updatePlayButton);
+  video.addEventListener('pause', updatePlayButton);
+  video.addEventListener('ended', updatePlayButton);
 
   const setVisible = nextVisible => {
     if (visible === nextVisible) return;
@@ -65,21 +66,7 @@
     player.classList.toggle('is-visible', visible);
     player.setAttribute('aria-hidden', String(!visible));
 
-    if (!started && visible) {
-      started = true;
-      const params = new URLSearchParams({
-        autoplay: '1',
-        mute: '1',
-        controls: '1',
-        playsinline: '1',
-        rel: '0',
-        enablejsapi: '1',
-        origin: window.location.origin
-      });
-      iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?${params}`;
-    } else {
-      syncPlayback();
-    }
+    syncPlayback();
   };
 
   const updateVisibility = () => {
@@ -94,16 +81,25 @@
 
   muteButton.addEventListener('click', () => {
     if (muted && volume === 0) {
-      volume = 40;
-      volumeSlider.value = String(volume);
+      volume = 0.4;
+      volumeSlider.value = String(volume * 100);
     }
     muted = !muted;
     updateMuteButton();
     syncPlayback();
   });
 
+  playButton.addEventListener('click', () => {
+    if (video.paused || video.ended) {
+      video.play().catch(() => updatePlayButton());
+    } else {
+      video.pause();
+    }
+    updatePlayButton();
+  });
+
   volumeSlider.addEventListener('input', () => {
-    volume = Number(volumeSlider.value);
+    volume = Number(volumeSlider.value) / 100;
     muted = volume === 0;
     updateMuteButton();
     syncPlayback();
