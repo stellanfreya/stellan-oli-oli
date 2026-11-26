@@ -25,6 +25,16 @@
   gallery.after(section);
 
   const feed = section.querySelector('.reels-feed');
+  const previewObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      const video = entry.target.querySelector('video');
+      video.preload = 'metadata';
+      video.load();
+      previewObserver.unobserve(entry.target);
+    }
+  }, { root: feed, rootMargin: '160px 0px' });
+
   for (const video of videos) {
     const card = document.createElement('article');
     card.className = 'reel-card';
@@ -38,10 +48,21 @@
     source.src = video.src;
     source.type = 'video/mp4';
     frame.append(source);
+    frame.addEventListener('loadeddata', () => {
+      if (!frame.videoWidth || !frame.videoHeight) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = 360;
+      canvas.height = Math.round(360 * frame.videoHeight / frame.videoWidth);
+      const context = canvas.getContext('2d');
+      if (!context) return;
+      context.drawImage(frame, 0, 0, canvas.width, canvas.height);
+      frame.poster = canvas.toDataURL('image/jpeg', 0.75);
+    }, { once: true });
     const caption = document.createElement('p');
     caption.textContent = video.title;
     card.append(frame, caption);
     feed.append(card);
+    previewObserver.observe(card);
   }
 
   const nav = document.querySelector('.navlinks');
