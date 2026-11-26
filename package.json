@@ -1,6 +1,6 @@
 {
   "name": "stellan-oli-oli-desktop",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Windows desktop app for the Stellan Oli Oli fan site",
   "repository": {
@@ -9,12 +9,14 @@
   },
   "main": "desktop/main.cjs",
   "scripts": {
-    "start": "electron .",
-    "dist:win": "electron-builder --win nsis --publish never"
+    "build:desktop": "esbuild desktop/home.js --bundle --platform=browser --target=chrome120 --format=iife --outfile=desktop/renderer.bundle.js",
+    "start": "npm run build:desktop && electron .",
+    "dist:win": "npm run build:desktop && electron-builder --win nsis --publish never"
   },
   "devDependencies": {
     "electron": "45.5.0",
-    "electron-builder": "26.18.0"
+    "electron-builder": "26.18.0",
+    "esbuild": "0.28.2"
   },
   "build": {
     "appId": "com.stellanfreya.stellanolioli",
@@ -24,6 +26,9 @@
     },
     "files": [
       "desktop/**/*",
+      "config.js",
+      "assets/**/*.mp4",
+      "images/**/*",
       "app-icon.svg",
       "app-icon.ico",
       "package.json"
@@ -40,6 +45,10 @@
       ],
       "artifactName": "Stellan-Oli-Oli-Setup.exe"
     },
+    "asarUnpack": [
+      "assets/**/*.mp4",
+      "images/**/*"
+    ],
     "nsis": {
       "oneClick": false,
       "perMachine": false,
@@ -50,5 +59,8 @@
       "installerIcon": "app-icon.ico",
       "uninstallerIcon": "app-icon.ico"
     }
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.119.2"
   }
 }

@@ -60,7 +60,7 @@ async function readFanState() {
   try {
     contents = await fs.readFile(fanStatePath, 'utf8');
   } catch (error) {
-    if (error.code === 'ENOENT') return { mood: 'dreamy', notes: [] };
+    if (error.code === 'ENOENT') return { mood: 'dreamy', notes: [], theme: 'dark', motion: true };
     throw error;
   }
 
@@ -72,7 +72,12 @@ async function readFanState() {
         || typeof note.createdAt !== 'string')) {
     throw new Error('Your saved fan desk data is not in the expected format.');
   }
-  return state;
+  return {
+    mood: state.mood,
+    notes: state.notes,
+    theme: state.theme === 'light' ? 'light' : 'dark',
+    motion: typeof state.motion === 'boolean' ? state.motion : true
+  };
 }
 
 async function writeFanState(state) {
@@ -172,10 +177,39 @@ ipcMain.handle('desktop:get-fan-state', event => {
   return readFanState();
 });
 
+ipcMain.handle('desktop:get-app-version', event => {
+  assertHomeWindow(event);
+  return app.getVersion();
+});
+
+ipcMain.handle('desktop:open-external', async (event, value) => {
+  assertHomeWindow(event);
+  if (typeof value !== 'string') throw new Error('Choose a valid external link.');
+  const url = new URL(value);
+  if (!['https:', 'http:', 'mailto:'].includes(url.protocol)) {
+    throw new Error('That external link is not allowed.');
+  }
+  await shell.openExternal(url.toString());
+});
+
 ipcMain.handle('desktop:set-mood', (event, mood) => {
   assertHomeWindow(event);
   if (!moods.has(mood)) throw new Error('Choose one of the moods shown on the fan desk.');
   return updateFanState(state => ({ ...state, mood }));
+});
+
+ipcMain.handle('desktop:set-preferences', (event, preferences) => {
+  assertHomeWindow(event);
+  if (!preferences || typeof preferences !== 'object' || Array.isArray(preferences)
+      || !['light', 'dark'].includes(preferences.theme)
+      || typeof preferences.motion !== 'boolean') {
+    throw new Error('Choose a valid theme and motion setting.');
+  }
+  return updateFanState(state => ({
+    ...state,
+    theme: preferences.theme,
+    motion: preferences.motion
+  }));
 });
 
 ipcMain.handle('desktop:save-note', (event, text) => {
