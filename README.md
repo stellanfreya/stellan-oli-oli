@@ -11,11 +11,11 @@ The site is published from the public `stellanfreya/stellan-oli-oli` repository.
 Website: <https://stellanfreya.github.io/stellan-oli-oli/>
 Repository: <https://github.com/stellanfreya/stellan-oli-oli>
 
-## Install on Windows
+## Windows app
 
-Open the website in Microsoft Edge or Google Chrome and select **Install on Windows**. The browser installs Stellan Oli Oli as a standalone Progressive Web App (PWA), available from the Windows Start menu. This is a browser-installed app, not a separate `.exe` installer. If the browser does not show an install prompt, use its menu: in Edge choose **Apps → Install this site as an app**; in Chrome choose **Install page as app**.
+Select **Download Windows App** on the website to download the Windows installer (`.exe`) from GitHub Releases. Run it to add Stellan Oli Oli to the Start menu and optionally create a desktop shortcut. The desktop app opens the same live fan site in a branded Windows window, so an internet connection is required.
 
-The installed app uses the same site and requires an internet connection for sign-in, chat, and other online features. The app shell is cached for basic offline loading; large video files are not cached.
+To build the installer locally, run `npm ci` followed by `npm run dist:win` on Windows. Pushing a tag like `app-v1.0.0` builds and publishes the installer automatically.
 
 ## Accounts
 

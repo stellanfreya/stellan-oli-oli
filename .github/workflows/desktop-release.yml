@@ -1,0 +1,34 @@
+name: Build Windows desktop app
+
+on:
+  push:
+    tags:
+      - "app-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build installer
+        run: npm run dist:win
+
+      - name: Publish installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: gh release create "$GITHUB_REF_NAME" "dist/Stellan-Oli-Oli-Setup.exe" --repo "$GITHUB_REPOSITORY" --title "Stellan Oli Oli ${GITHUB_REF_NAME#app-v}" --generate-notes

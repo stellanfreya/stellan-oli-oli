@@ -1,0 +1,53 @@
+{
+  "name": "stellan-oli-oli-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Windows desktop app for the Stellan Oli Oli fan site",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stellanfreya/stellan-oli-oli.git"
+  },
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win nsis --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.5.0",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.stellanfreya.stellanolioli",
+    "productName": "Stellan Oli Oli",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "desktop/**/*",
+      "app-icon.ico",
+      "package.json"
+    ],
+    "win": {
+      "icon": "app-icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Stellan-Oli-Oli-Setup.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Stellan Oli Oli",
+      "installerIcon": "app-icon.ico",
+      "uninstallerIcon": "app-icon.ico"
+    }
+  }
+}

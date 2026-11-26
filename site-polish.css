@@ -590,19 +590,9 @@ html.theme-dark #accountDisplayName {
 .reels-shortcut { position: fixed; right: 20px; bottom: 20px; z-index: 20; display: grid; width: 52px; height: 52px; place-items: center; border: 1px solid #fff9; border-radius: 50%; background: #754858; color: #fff; box-shadow: 0 8px 24px #0005; font: 16px var(--sans); }
 .reels-shortcut:hover { background: #92596d; transform: translateY(-2px); }
 .hero-actions { flex-wrap: wrap; }
-.app-install-button { border: 1px solid var(--red); background: transparent; color: var(--ink); cursor: pointer; }
-.app-install-button:hover { border-color: var(--red); background: var(--red); color: #fff; }
-.app-install-button:disabled { cursor: default; opacity: .7; }
-.app-install-dialog { position: fixed; width: min(460px, calc(100% - 32px)); max-width: none; max-height: min(80vh, 620px); margin: auto; padding: 34px; overflow-y: auto; border: 1px solid #261f1c33; background: var(--paper); color: var(--ink); box-shadow: 12px 14px 0 var(--pink); }
-.app-install-dialog::backdrop { background: #211915b8; backdrop-filter: blur(8px); }
-.app-install-dialog h2 { margin: 14px 0; font: 600 clamp(30px, 7vw, 42px)/1 var(--serif); letter-spacing: -.04em; }
-.app-install-dialog>p { font: 11px/1.65 var(--mono); color: #665950; }
-.app-install-close { position: absolute; top: 14px; right: 14px; display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: transparent; cursor: pointer; font-size: 19px; }
-.app-install-steps { margin: 20px 0; padding: 2px 16px; border-left: 2px solid var(--red); }
-.app-install-steps p { font: 10px/1.7 var(--mono); color: #665950; }
-.app-install-steps strong { color: var(--ink); text-transform: uppercase; }
-.app-install-footnote { padding-top: 12px; border-top: 1px solid var(--line); }
-.app-install-status { min-height: 18px; color: var(--red) !important; }
+.app-download-button { border: 1px solid var(--red); background: transparent; color: var(--ink); }
+.app-download-button:hover { border-color: var(--red); background: var(--red); color: #fff; }
+.app-download-note { margin: 10px 0 0; font: 9px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #756861; }
 .scroll-video-player { position: fixed; right: 22px; bottom: 86px; z-index: 25; width: min(340px, calc(100vw - 32px)); padding: 12px; border: 1px solid #ffffff3d; border-radius: 18px; background: #211d20; color: #f5efe5; box-shadow: 0 16px 48px #0006; opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(14px) scale(.98); transition: opacity .25s ease, transform .25s ease, visibility .25s; }
 .scroll-video-player.is-visible { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0) scale(1); }
 .scroll-video-heading, .scroll-video-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 9px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
