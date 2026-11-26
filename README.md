@@ -11,6 +11,12 @@ The site is published from the public `stellanfreya/stellan-oli-oli` repository.
 Website: <https://stellanfreya.github.io/stellan-oli-oli/>
 Repository: <https://github.com/stellanfreya/stellan-oli-oli>
 
+## Install on Windows
+
+Open the website in Microsoft Edge or Google Chrome and select **Install on Windows**. The browser installs Stellan Oli Oli as a standalone Progressive Web App (PWA), available from the Windows Start menu. This is a browser-installed app, not a separate `.exe` installer. If the browser does not show an install prompt, use its menu: in Edge choose **Apps → Install this site as an app**; in Chrome choose **Install page as app**.
+
+The installed app uses the same site and requires an internet connection for sign-in, chat, and other online features. The app shell is cached for basic offline loading; large video files are not cached.
+
 ## Accounts
 
 The site uses Supabase Auth with email confirmation and no phone verification. Favorites and playlists are stored per account under row-level security. The fan-site project URL and public publishable key are in `config.js`. Read [setup.md](setup.md) for the required Pages redirect address and email delivery setup.

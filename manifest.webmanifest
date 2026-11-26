@@ -1,0 +1,32 @@
+{
+  "id": "./",
+  "name": "Stellan Oli Oli — Olivia Rodrigo Fan Space",
+  "short_name": "Stellan Oli Oli",
+  "description": "A little corner of the internet for Olivia Rodrigo fans.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5efe5",
+  "theme_color": "#e64d3d",
+  "categories": ["music", "entertainment", "lifestyle"],
+  "icons": [
+    {
+      "src": "./app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
