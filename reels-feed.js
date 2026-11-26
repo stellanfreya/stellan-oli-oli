@@ -3,11 +3,10 @@
   if (!gallery) return;
 
   const videos = [
-    { id: 'ZmDBbnmKpqQ', title: 'drivers license · Official Video' },
-    { id: 'RlPNh_PBZb4', title: 'vampire · Official Video' },
-    { id: 'ZsJ-BHohXRI', title: 'get him back! · Official Video' },
-    { id: 'QXcjPySjdJU', title: 'obsessed · Official Music Video' },
-    { id: 'zla_eLVFiDU', title: 'bad idea right? · Official Lyric Video' }
+    { src: './assets/oliclip-iphone-18-pro-max.mp4', title: 'Trying new cases on my iPhone 18 Pro Max!' },
+    { src: './assets/oliclip-real-diva.mp4', title: 'Who’s the REAL Diva Here? 😂💜 #stupidsong' },
+    { src: './assets/oliclip-bad-idea-right-nashville.mp4', title: 'Olivia Rodrigo performing “bad idea right?” · Nashville Night 2' },
+    { src: './assets/oliclip-my-way-nashville.mp4', title: 'Olivia Rodrigo performing “my way” · Nashville Night 2' }
   ];
   const section = document.createElement('section');
   section.className = 'section reels-section oliclips-section';
@@ -19,25 +18,26 @@
         <div class="label">▶ oliclips · official video feed</div>
         <h2 id="oliclipsTitle">Olivia<br><em>Oliclips.</em></h2>
       </div>
-      <div class="section-note">Scroll the feed and play<br>official videos right here.</div>
+      <div class="section-note">Scroll the feed and play<br>videos right here.</div>
     </div>
     <div class="reels-feed" tabindex="0" aria-label="Scrollable Olivia Rodrigo video feed"></div>
-    <p class="reels-credit">Official videos are embedded from YouTube and remain hosted by their rights holders.</p>
-    <a class="pill oliclips-more" href="https://www.youtube.com/@OliviaRodrigoVEVO/shorts" target="_blank" rel="noopener noreferrer">browse official shorts ↗</a>`;
+    <p class="reels-credit">Videos are hosted directly on this site; Oliclips has no YouTube embeds.</p>`;
   gallery.after(section);
 
   const feed = section.querySelector('.reels-feed');
   for (const video of videos) {
     const card = document.createElement('article');
     card.className = 'reel-card';
-    const frame = document.createElement('iframe');
+    const frame = document.createElement('video');
     frame.className = 'reel-player';
-    frame.src = `https://www.youtube-nocookie.com/embed/${video.id}?playsinline=1&rel=0`;
-    frame.title = `Olivia Rodrigo · ${video.title}`;
-    frame.loading = 'lazy';
-    frame.referrerPolicy = 'strict-origin-when-cross-origin';
-    frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-    frame.allowFullscreen = true;
+    frame.controls = true;
+    frame.playsInline = true;
+    frame.preload = 'none';
+    frame.setAttribute('aria-label', video.title);
+    const source = document.createElement('source');
+    source.src = video.src;
+    source.type = 'video/mp4';
+    frame.append(source);
     const caption = document.createElement('p');
     caption.textContent = video.title;
     card.append(frame, caption);
