@@ -48,7 +48,7 @@
     source.src = video.src;
     source.type = 'video/mp4';
     frame.append(source);
-    frame.addEventListener('loadeddata', () => {
+    const capturePreview = () => {
       if (!frame.videoWidth || !frame.videoHeight) return;
       const canvas = document.createElement('canvas');
       canvas.width = 360;
@@ -57,6 +57,15 @@
       if (!context) return;
       context.drawImage(frame, 0, 0, canvas.width, canvas.height);
       frame.poster = canvas.toDataURL('image/jpeg', 0.75);
+      if (frame.paused && frame.currentTime > 0) frame.currentTime = 0;
+    };
+    frame.addEventListener('loadeddata', () => {
+      if (!Number.isFinite(frame.duration) || frame.duration <= 0) {
+        capturePreview();
+        return;
+      }
+      frame.addEventListener('seeked', capturePreview, { once: true });
+      frame.currentTime = Math.min(6, Math.max(1, frame.duration * 0.2));
     }, { once: true });
     const caption = document.createElement('p');
     caption.textContent = video.title;
