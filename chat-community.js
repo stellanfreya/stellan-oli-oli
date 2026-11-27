@@ -221,6 +221,9 @@
     .chat-dm-image-attachment a { display: block; line-height: 0; }
     .chat-dm-image-attachment img { display: block; width: auto; max-width: 100%; max-height: 320px; border: 1px solid #6e504222; border-radius: 10px; object-fit: contain; }
     .chat-dm-image-attachment figcaption { margin-top: 4px; font: 8px var(--mono); color: #756861; overflow-wrap: anywhere; }
+    .chat-dm-video-attachment { max-width: min(320px, 100%); margin: 7px 0 0; }
+    .chat-dm-video-attachment video { display: block; width: 100%; max-height: 320px; border: 1px solid #6e504222; border-radius: 10px; background: #201c27; }
+    .chat-dm-video-attachment figcaption { margin-top: 4px; font: 8px var(--mono); color: #756861; overflow-wrap: anywhere; }
     .chat-dm-gif { display: block; max-width: min(250px, 100%); max-height: 220px; margin-top: 7px; object-fit: contain; }
     .chat-dm-message time { display: block; margin-top: 5px; text-align: right; font: 8px var(--mono); color: #756861; }
     .chat-dm-empty { display: grid; flex: 1; place-items: center; padding: 20px; text-align: center; font: 11px/1.6 var(--mono); color: #756861; }
@@ -568,7 +571,12 @@
       body.textContent = item.body;
       if (item.body) row.append(body);
       if (item.attachment_path) {
-        if (imageAttachmentTypes.has(item.attachment_type)) {
+        const extension = (item.attachment_name || item.attachment_path).split(/[?#]/, 1)[0].split('.').pop()?.toLowerCase();
+        const inferredType = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', mp4: 'video/mp4' }[extension];
+        const attachmentType = imageAttachmentTypes.has(item.attachment_type) || item.attachment_type === 'video/mp4'
+          ? item.attachment_type
+          : (!item.attachment_type || item.attachment_type === 'application/octet-stream' ? inferredType : null);
+        if (imageAttachmentTypes.has(attachmentType)) {
           const figure = document.createElement('figure');
           figure.className = 'chat-dm-image-attachment';
           const attachment = document.createElement('a');
@@ -588,6 +596,23 @@
             if (image.isConnected) image.src = url;
           }).catch(error => {
             if (image.isConnected) caption.textContent = `Could not load image preview: ${error.message || 'please try opening the image.'}`;
+          });
+          row.append(figure);
+        } else if (attachmentType === 'video/mp4') {
+          const figure = document.createElement('figure');
+          figure.className = 'chat-dm-video-attachment';
+          const video = document.createElement('video');
+          video.controls = true;
+          video.preload = 'metadata';
+          video.playsInline = true;
+          video.setAttribute('aria-label', `Video attachment: ${item.attachment_name || 'Video attachment'}`);
+          const caption = document.createElement('figcaption');
+          caption.textContent = item.attachment_name || 'Video attachment';
+          figure.append(video, caption);
+          getAttachmentUrl(item.attachment_path).then(url => {
+            if (video.isConnected) video.src = url;
+          }).catch(error => {
+            if (video.isConnected) caption.textContent = `Could not load video preview: ${error.message || 'please try downloading the video.'}`;
           });
           row.append(figure);
         } else {
@@ -905,7 +930,7 @@
         attachmentPath = `${user.id}/dm/${crypto.randomUUID()}`;
         const { error: uploadError } = await supabase.storage
           .from('community-chat-files')
-          .upload(attachmentPath, file, { contentType: 'application/octet-stream', upsert: false });
+          .upload(attachmentPath, file, { contentType: file.type || 'application/octet-stream', upsert: false });
         if (uploadError) throw new Error(`Storage upload failed${uploadError.statusCode ? ` (HTTP ${uploadError.statusCode})` : ''}: ${uploadError.message || 'check the file type and size.'}`);
         attachmentUploaded = true;
         Object.assign(message, {

@@ -112,6 +112,9 @@ let currentMode = 'online';
 let selectedPeer = null;
 let pendingGroupFile = null;
 let pendingDmFile = null;
+let pendingGroupGif = null;
+let pendingDmGif = null;
+const gifChoices = new Map();
 let favorites = new Set();
 let playlists = [];
 let playlistTracks = new Map();
@@ -172,10 +175,118 @@ function avatarMarkup(value, name, className = 'chat-avatar') {
     : `<span class="${className}">${escapeHtml((name || 'F').slice(0, 1).toUpperCase())}</span>`;
 }
 
-function attachmentMarkup(path, name) {
-  return path
-    ? `<button class="attachment-link" type="button" data-open-attachment="${escapeHtml(path)}">↧ ${escapeHtml(name || 'Download attachment')}</button>`
+const attachmentUrlCache = new Map();
+const imageAttachmentTypes = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+
+async function attachmentMarkup(path, name, type) {
+  if (!path) return '';
+  const safeName = escapeHtml(name || 'Download attachment');
+  const extension = (name || path).split(/[?#]/, 1)[0].split('.').pop()?.toLowerCase();
+  const mediaType = imageAttachmentTypes.has(type) || type === 'video/mp4'
+    ? type
+    : (!type || type === 'application/octet-stream')
+      ? ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', mp4: 'video/mp4' })[extension]
+      : null;
+  const isImage = imageAttachmentTypes.has(mediaType);
+  if (!isImage && mediaType !== 'video/mp4') {
+    return `<button class="attachment-link" type="button" data-open-attachment="${escapeHtml(path)}">↧ ${safeName}</button>`;
+  }
+  try {
+    let cached = attachmentUrlCache.get(path);
+    if (!cached || cached.expiresAt <= Date.now() + 30_000) {
+      const { data, error } = await supabase.storage.from('community-chat-files').createSignedUrl(path, 3600);
+      if (error) throw error;
+      cached = { url: data.signedUrl, expiresAt: Date.now() + 3600_000 };
+      attachmentUrlCache.set(path, cached);
+    }
+    const url = escapeHtml(cached.url);
+    return isImage
+      ? `<figure class="chat-media-attachment"><img src="${url}" alt="${safeName}" loading="lazy"><figcaption>${safeName}</figcaption></figure>`
+      : `<figure class="chat-media-attachment"><video src="${url}" controls preload="metadata" playsinline></video><figcaption>${safeName}</figcaption></figure>`;
+  } catch (error) {
+    return `<button class="attachment-link" type="button" data-open-attachment="${escapeHtml(path)}">↧ ${safeName}</button><p class="attachment-error">Preview unavailable: ${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function isGiphyUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && (url.hostname === 'giphy.com' || url.hostname.endsWith('.giphy.com'));
+  } catch {
+    return false;
+  }
+}
+
+function gifMarkup(url) {
+  return isGiphyUrl(url)
+    ? `<figure class="chat-gif-attachment"><img src="${escapeHtml(url)}" alt="GIF shared from GIPHY" loading="lazy"><figcaption>Powered by GIPHY</figcaption></figure>`
     : '';
+}
+
+function renderGifPicker(scope, disabled = false) {
+  const label = scope === 'dm' ? 'private message' : 'fan chat';
+  return `<section class="chat-gif-picker" id="${scope}GifPicker" aria-label="GIPHY search" hidden>
+    <form class="chat-gif-search-form" data-gif-search-form="${scope}">
+      <label class="sr-only" for="${scope}GifQuery">Search GIPHY for a GIF to send in your ${label}</label>
+      <div class="chat-gif-search"><input id="${scope}GifQuery" type="search" maxlength="50" placeholder="Search GIPHY…" required ${disabled ? 'disabled' : ''}><button class="button button-quiet button-small" type="submit" ${disabled ? 'disabled' : ''}>Search GIFs</button></div>
+    </form>
+    <p class="chat-gif-status" id="${scope}GifStatus" role="status" aria-live="polite"></p>
+    <div class="chat-gif-results" id="${scope}GifResults"></div>
+    <p class="chat-gif-attribution">Powered by <a href="https://giphy.com" target="_blank" rel="noopener noreferrer">GIPHY</a></p>
+  </section>
+  <div class="chat-gif-selection" id="${scope}GifSelection" hidden></div>`;
+}
+
+function updateGifSelection(scope, gif) {
+  const selection = $(`#${scope}GifSelection`);
+  if (!selection) return;
+  selection.hidden = !gif;
+  selection.innerHTML = gif
+    ? `<img src="${escapeHtml(gif.previewUrl || gif.url)}" alt=""><span>GIF ready: ${escapeHtml(gif.title)}</span><button class="clip-muted" type="button" data-clear-gif="${scope}">Remove</button>`
+    : '';
+}
+
+async function searchGifs(scope) {
+  const query = $(`#${scope}GifQuery`)?.value.trim();
+  const results = $(`#${scope}GifResults`);
+  const status = $(`#${scope}GifStatus`);
+  if (!query || !results || !status) return;
+  const apiKey = window.ORACLE_GIPHY_API_KEY;
+  if (!apiKey) {
+    status.textContent = 'GIPHY search is not configured.';
+    return;
+  }
+  status.textContent = 'Searching GIPHY…';
+  results.replaceChildren();
+  try {
+    const params = new URLSearchParams({ api_key: apiKey, q: query, limit: '18', rating: 'g', lang: 'en' });
+    const response = await fetch(`https://api.giphy.com/v1/gifs/search?${params}`);
+    if (!response.ok) throw new Error(`GIPHY search failed (${response.status}).`);
+    const result = await response.json();
+    gifChoices.clear();
+    const buttons = (result.data || []).flatMap(gif => {
+      const url = gif.images?.fixed_height?.url;
+      const previewUrl = gif.images?.fixed_width_small?.url || url;
+      if (!gif.id || !isGiphyUrl(url) || !isGiphyUrl(previewUrl)) return [];
+      const choice = { id: gif.id, url, previewUrl, title: gif.title || 'GIPHY GIF' };
+      gifChoices.set(choice.id, choice);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'chat-gif-result';
+      button.dataset.selectGif = choice.id;
+      button.setAttribute('aria-label', `Select ${choice.title}`);
+      const image = document.createElement('img');
+      image.src = previewUrl;
+      image.alt = choice.title;
+      image.loading = 'lazy';
+      button.append(image);
+      return [button];
+    });
+    results.replaceChildren(...buttons);
+    status.textContent = buttons.length ? 'Choose a GIF to add it to your message.' : 'No GIFs found.';
+  } catch (error) {
+    status.textContent = error.message || 'Could not search GIPHY.';
+  }
 }
 
 function applyAppearance() {
@@ -571,8 +682,9 @@ function renderCommunity() {
         <div class="chat-messages" id="groupMessages" aria-live="polite"><div class="empty-state"><span>✳</span><p>Loading the fan circle…</p></div></div>
         <form class="chat-composer" id="groupForm">
           <div class="chat-compose-main"><label class="sr-only" for="groupMessage">Write a group message</label><input class="text-input" id="groupMessage" maxlength="500" placeholder="Say something lovely…"><button class="button button-primary" id="groupSend" type="submit">Send ↗</button></div>
-          <div class="chat-compose-tools"><input id="groupFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,application/pdf,text/plain,text/csv,application/zip,application/rtf,application/msword,application/vnd.ms-excel,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden><button class="clip-muted" type="button" data-select-file="group">＋ Attach file</button><small id="groupFileName">Up to 10 MB</small></div>
+          <div class="chat-compose-tools"><input id="groupFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,application/pdf,text/plain,text/csv,application/zip,application/rtf,application/msword,application/vnd.ms-excel,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden><button class="clip-muted" type="button" data-select-file="group" aria-label="Choose a photo, animated GIF, video, or document">＋ Photo / video</button><button class="clip-muted" type="button" data-gif-picker="group" aria-controls="groupGifPicker" aria-expanded="false" aria-label="Search GIPHY for a GIF">GIFs ✨</button><small id="groupFileName">Photos, videos, documents · up to 10 MB</small></div>
         </form>
+        ${renderGifPicker('group')}
         <p class="form-status" id="groupStatus" role="status" aria-live="polite"></p>
       </section>
       <aside class="panel chat-aside social-card">
@@ -601,8 +713,9 @@ function renderDirectMessages() {
         <div class="dm-scroll" id="dmMessages">${selected ? '<div class="empty-state"><span>♡</span><p>Loading your conversation…</p></div>' : '<div class="empty-state"><span>♡</span><p>Choose someone from the fan circle to say hello.</p></div>'}</div>
         <form class="chat-composer" id="dmForm">
           <div class="chat-compose-main"><label class="sr-only" for="dmMessage">Write a private message</label><input class="text-input" id="dmMessage" maxlength="500" placeholder="${selected ? 'Write a private message…' : 'Choose a fan first…'}" ${selected ? '' : 'disabled'}><button class="button button-primary" id="dmSend" type="submit" ${selected ? '' : 'disabled'}>Send ↗</button></div>
-          <div class="chat-compose-tools"><input id="dmFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,application/pdf,text/plain,text/csv,application/zip,application/rtf,application/msword,application/vnd.ms-excel,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden ${selected ? '' : 'disabled'}><button class="clip-muted" type="button" data-select-file="dm" ${selected ? '' : 'disabled'}>＋ Attach file</button><small id="dmFileName">Up to 10 MB</small></div>
+          <div class="chat-compose-tools"><input id="dmFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,application/pdf,text/plain,text/csv,application/zip,application/rtf,application/msword,application/vnd.ms-excel,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden ${selected ? '' : 'disabled'}><button class="clip-muted" type="button" data-select-file="dm" aria-label="Choose a photo, animated GIF, video, or document" ${selected ? '' : 'disabled'}>＋ Photo / video</button><button class="clip-muted" type="button" data-gif-picker="dm" aria-controls="dmGifPicker" aria-expanded="false" aria-label="Search GIPHY for a GIF" ${selected ? '' : 'disabled'}>GIFs ✨</button><small id="dmFileName">Photos, videos, documents · up to 10 MB</small></div>
         </form>
+        ${renderGifPicker('dm', !selected)}
         <p class="form-status" id="dmStatus" role="status" aria-live="polite"></p>
       </section>
     </div>
@@ -630,8 +743,14 @@ function renderSettings() {
 function renderPage(page = currentPage) {
   const nextPage = pageNames[page] ? page : 'home';
   if (currentPage !== nextPage) {
-    if (currentPage === 'community') pendingGroupFile = null;
-    if (currentPage === 'messages') pendingDmFile = null;
+    if (currentPage === 'community') {
+      pendingGroupFile = null;
+      pendingGroupGif = null;
+    }
+    if (currentPage === 'messages') {
+      pendingDmFile = null;
+      pendingDmGif = null;
+    }
   }
   currentPage = nextPage;
   $('#pageCrumb').textContent = pageNames[currentPage];
@@ -752,6 +871,10 @@ async function updateUser(user) {
   currentUser = user;
   profile = null;
   if (changed) {
+    pendingGroupFile = null;
+    pendingDmFile = null;
+    pendingGroupGif = null;
+    pendingDmGif = null;
     favorites = new Set();
     playlists = [];
     playlistTracks = new Map();
@@ -763,6 +886,8 @@ async function updateUser(user) {
     selectedPeer = null;
     pendingGroupFile = null;
     pendingDmFile = null;
+    pendingGroupGif = null;
+    pendingDmGif = null;
     currentMode = 'online';
     if (realtimeChannel && supabase) {
       await supabase.removeChannel(realtimeChannel);
@@ -1080,7 +1205,7 @@ async function fetchGroupMessages() {
   const list = $('#groupMessages');
   if (!list || !currentUser) return;
   const { data, error } = await supabase.from('chat_messages')
-    .select('id,user_id,display_name,body,created_at,attachment_path,attachment_name')
+    .select('id,user_id,display_name,body,created_at,attachment_path,attachment_name,attachment_type,gif_url')
     .order('created_at', { ascending: false })
     .limit(80);
   if (error) {
@@ -1100,18 +1225,20 @@ async function fetchGroupMessages() {
     reactions = result.data;
   }
   if (!$('#groupMessages')) return;
-  list.innerHTML = messages.length ? messages.map(message => {
+  list.innerHTML = messages.length ? (await Promise.all(messages.map(async message => {
     const author = directory.find(person => person.user_id === message.user_id);
     const messageReactions = reactions.filter(item => item.message_id === message.id);
     const likedByMe = messageReactions.some(item => item.user_id === currentUser.id);
+    const media = await attachmentMarkup(message.attachment_path, message.attachment_name, message.attachment_type);
+    const gif = gifMarkup(message.gif_url);
     return `<article class="chat-message">
       ${avatarMarkup(author?.avatar_url, message.display_name)}
       <div class="chat-message-body"><div class="chat-message-meta"><strong>${escapeHtml(message.display_name)}</strong><time>${escapeHtml(timeLabel(message.created_at))}</time></div>
-        <p>${escapeHtml(message.body)}</p>${attachmentMarkup(message.attachment_path, message.attachment_name)}
+        <p>${escapeHtml(message.body)}</p>${media}${gif}
         <div class="chat-message-tools"><button type="button" data-react-message="${message.id}" aria-pressed="${likedByMe}">♥ ${messageReactions.length || ''}</button>${message.user_id === currentUser.id ? `<button type="button" data-delete-message="${message.id}">delete</button>` : ''}</div>
       </div>
     </article>`;
-  }).join('') : '<div class="empty-state"><span>✳</span><p>Be the first to say hello.</p></div>';
+  }))).join('') : '<div class="empty-state"><span>✳</span><p>Be the first to say hello.</p></div>';
   list.scrollTop = list.scrollHeight;
   observeScrollReveals(list);
 }
@@ -1131,8 +1258,13 @@ async function sendGroupMessage(form) {
   const send = $('#groupSend');
   const body = input.value.trim();
   const file = pendingGroupFile;
-  if ((!body && !file) || !currentUser) {
-    setInlineStatus('Write a message or attach a file first.', '#groupStatus');
+  const gif = pendingGroupGif;
+  if ((!body && !file && !gif) || !currentUser) {
+    setInlineStatus('Write a message, attach a file, or choose a GIF first.', '#groupStatus');
+    return;
+  }
+  if (file && gif) {
+    setInlineStatus('Choose either a file or a GIF for each message.', '#groupStatus');
     return;
   }
   send.disabled = true;
@@ -1145,13 +1277,16 @@ async function sendGroupMessage(form) {
       user_id: currentUser.id,
       display_name: (displayName() || 'Fan').slice(0, 40),
       body,
+      ...(gif ? { gif_id: gif.id, gif_url: gif.url } : {}),
       ...(attachment || {})
     });
     if (error) throw error;
     pendingGroupFile = null;
+    pendingGroupGif = null;
     input.value = '';
     $('#groupFile').value = '';
-    $('#groupFileName').textContent = 'Up to 10 MB';
+    $('#groupFileName').textContent = 'Also accepts documents · up to 10 MB';
+    updateGifSelection('group', null);
     await loadGroupMessages();
   } catch (error) {
     if (uploadedPath) {
@@ -1198,7 +1333,7 @@ async function fetchDirectMessages() {
   const list = $('#dmMessages');
   if (!list || !currentUser || !selectedPeer) return;
   const { data, error } = await supabase.from('direct_messages')
-    .select('id,sender_id,recipient_id,body,created_at,attachment_path,attachment_name')
+    .select('id,sender_id,recipient_id,body,created_at,attachment_path,attachment_name,attachment_type,gif_url')
     .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${selectedPeer}),and(sender_id.eq.${selectedPeer},recipient_id.eq.${currentUser.id})`)
     .order('created_at', { ascending: true })
     .limit(100);
@@ -1208,10 +1343,14 @@ async function fetchDirectMessages() {
     return;
   }
   if (!$('#dmMessages')) return;
-  list.innerHTML = data.length ? data.map(message => `
+  list.innerHTML = data.length ? (await Promise.all(data.map(async message => {
+    const media = await attachmentMarkup(message.attachment_path, message.attachment_name, message.attachment_type);
+    const gif = gifMarkup(message.gif_url);
+    return `
     <article class="dm-bubble ${message.sender_id === currentUser.id ? 'mine' : ''}">
-      <p>${escapeHtml(message.body)}</p>${attachmentMarkup(message.attachment_path, message.attachment_name)}<time>${escapeHtml(timeLabel(message.created_at))}</time>
-    </article>`).join('') : '<div class="empty-state"><span>♡</span><p>Start the conversation with a kind hello.</p></div>';
+      <p>${escapeHtml(message.body)}</p>${media}${gif}<time>${escapeHtml(timeLabel(message.created_at))}</time>
+    </article>`;
+  }))).join('') : '<div class="empty-state"><span>♡</span><p>Start the conversation with a kind hello.</p></div>';
   list.scrollTop = list.scrollHeight;
   observeScrollReveals(list);
 }
@@ -1231,8 +1370,13 @@ async function sendDirectMessage(form) {
   const send = $('#dmSend');
   const body = input.value.trim();
   const file = pendingDmFile;
-  if ((!body && !file) || !selectedPeer || !currentUser) {
-    setInlineStatus('Write a message or attach a file first.', '#dmStatus');
+  const gif = pendingDmGif;
+  if ((!body && !file && !gif) || !selectedPeer || !currentUser) {
+    setInlineStatus('Write a message, attach a file, or choose a GIF first.', '#dmStatus');
+    return;
+  }
+  if (file && gif) {
+    setInlineStatus('Choose either a file or a GIF for each message.', '#dmStatus');
     return;
   }
   send.disabled = true;
@@ -1245,13 +1389,16 @@ async function sendDirectMessage(form) {
       sender_id: currentUser.id,
       recipient_id: selectedPeer,
       body,
+      ...(gif ? { gif_id: gif.id, gif_url: gif.url } : {}),
       ...(attachment || {})
     });
     if (error) throw error;
     pendingDmFile = null;
+    pendingDmGif = null;
     input.value = '';
     $('#dmFile').value = '';
-    $('#dmFileName').textContent = 'Up to 10 MB';
+    $('#dmFileName').textContent = 'Also accepts documents · up to 10 MB';
+    updateGifSelection('dm', null);
     await loadDirectMessages();
   } catch (error) {
     if (uploadedPath) {
@@ -1269,7 +1416,7 @@ async function sendDirectMessage(form) {
 }
 
 const allowedAttachmentTypes = new Set([
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4',
+  ...imageAttachmentTypes, 'video/mp4',
   'application/pdf', 'text/plain', 'text/csv', 'application/zip',
   'application/rtf', 'application/msword', 'application/vnd.ms-excel',
   'application/vnd.ms-powerpoint',
@@ -1283,7 +1430,7 @@ async function uploadAttachment(file, directMessage) {
     throw new Error('Choose a file smaller than 10 MB.');
   }
   if (!allowedAttachmentTypes.has(file.type)) {
-    throw new Error('This file type is not supported. Choose an image, MP4, document, or text file.');
+    throw new Error('This file type is not supported. Choose a photo, animated GIF, MP4 video, document, or text file.');
   }
   if (file.name.length > 255) throw new Error('The file name is too long.');
   const cleanName = file.name.replace(/[\\/\u0000-\u001f]/g, '_').slice(-200);
@@ -1468,6 +1615,46 @@ document.addEventListener('click', event => {
     $(`#${fileButton.dataset.selectFile}File`).click();
     return;
   }
+  const gifPickerButton = event.target.closest('[data-gif-picker]');
+  if (gifPickerButton) {
+    const scope = gifPickerButton.dataset.gifPicker;
+    const picker = $(`#${scope}GifPicker`);
+    if (!picker) return;
+    picker.hidden = !picker.hidden;
+    gifPickerButton.setAttribute('aria-expanded', String(!picker.hidden));
+    if (!picker.hidden) $(`#${scope}GifQuery`)?.focus();
+    return;
+  }
+  const gifResult = event.target.closest('[data-select-gif]');
+  if (gifResult) {
+    const scope = gifResult.closest('#groupGifResults') ? 'group' : 'dm';
+    const gif = gifChoices.get(gifResult.dataset.selectGif);
+    if (!gif) return;
+    if (scope === 'group') {
+      pendingGroupGif = gif;
+      pendingGroupFile = null;
+      $('#groupFile').value = '';
+      $('#groupFileName').textContent = 'Photos, videos, documents · up to 10 MB';
+    } else {
+      pendingDmGif = gif;
+      pendingDmFile = null;
+      $('#dmFile').value = '';
+      $('#dmFileName').textContent = 'Photos, videos, documents · up to 10 MB';
+    }
+    updateGifSelection(scope, gif);
+    $(`#${scope}GifPicker`).hidden = true;
+    setInlineStatus('GIF ready to send.', scope === 'group' ? '#groupStatus' : '#dmStatus');
+    return;
+  }
+  const clearGifButton = event.target.closest('[data-clear-gif]');
+  if (clearGifButton) {
+    const scope = clearGifButton.dataset.clearGif;
+    if (scope === 'group') pendingGroupGif = null;
+    else pendingDmGif = null;
+    updateGifSelection(scope, null);
+    setInlineStatus('', scope === 'group' ? '#groupStatus' : '#dmStatus');
+    return;
+  }
   const actionButton = event.target.closest('[data-action]');
   if (actionButton) {
     const { action } = actionButton.dataset;
@@ -1496,6 +1683,7 @@ document.addEventListener('click', event => {
   const peerButton = event.target.closest('[data-open-peer]');
   if (peerButton) {
     pendingDmFile = null;
+    pendingDmGif = null;
     selectedPeer = peerButton.dataset.openPeer;
     renderPage('messages');
     return;
@@ -1533,7 +1721,10 @@ document.addEventListener('click', event => {
 
 document.addEventListener('submit', event => {
   const form = event.target;
-  if (form.id === 'noteForm') {
+  if (form.matches('[data-gif-search-form]')) {
+    event.preventDefault();
+    void searchGifs(form.dataset.gifSearchForm);
+  } else if (form.id === 'noteForm') {
     event.preventDefault();
     void savePrivateNote();
   } else if (form.id === 'authForm') {
@@ -1573,7 +1764,7 @@ document.addEventListener('change', event => {
     if (file && (file.size < 1 || file.size > 10 * 1024 * 1024 || !allowedAttachmentTypes.has(file.type))) {
       setInlineStatus(file.size > 10 * 1024 * 1024
         ? 'Choose a file smaller than 10 MB.'
-        : 'That file type is not supported. Choose an image, MP4, document, or text file.', statusSelector);
+        : 'That file type is not supported. Choose a photo, animated GIF, MP4 video, document, or text file.', statusSelector);
       event.target.value = '';
       if (directMessage) pendingDmFile = null;
       else pendingGroupFile = null;
@@ -1581,10 +1772,14 @@ document.addEventListener('change', event => {
     }
     if (directMessage) {
       pendingDmFile = file;
-      $('#dmFileName').textContent = file?.name || 'Up to 10 MB';
+      pendingDmGif = null;
+      $('#dmFileName').textContent = file?.name || 'Also accepts documents · up to 10 MB';
+      updateGifSelection('dm', null);
     } else {
       pendingGroupFile = file;
-      $('#groupFileName').textContent = file?.name || 'Up to 10 MB';
+      pendingGroupGif = null;
+      $('#groupFileName').textContent = file?.name || 'Also accepts documents · up to 10 MB';
+      updateGifSelection('group', null);
     }
     setInlineStatus('');
   }
