@@ -43,6 +43,13 @@ const photos = [
   { src: 'olivia-live-o2-23.jpg', caption: 'the bridge · london, 2024', alt: 'Olivia Rodrigo singing into a microphone at the O2 Arena', credit: 'https://commons.wikimedia.org/wiki/File:OlivaRO2150524_(23)_(53726273467).jpg' },
   { src: 'olivia-glastonbury-2025.jpg', caption: 'glastonbury · summer, 2025', alt: 'Olivia Rodrigo performing at Glastonbury Festival in 2025', credit: 'https://commons.wikimedia.org/wiki/File:Glasto2025-546_(cropped_2).jpg' }
 ];
+const dashboardPhoto = {
+  src: 'olivia-rodrigo-o2-london-2024.jpg',
+  alt: 'Olivia Rodrigo performing at The O2 in London in May 2024',
+  caption: 'the o2 · london · may 2024',
+  attribution: 'Photo by Raph_PH · CC BY 2.0 · framed crop',
+  credit: 'https://commons.wikimedia.org/wiki/File:OlivaRO2150524_(8)_(53727178201)_(cropped).jpg'
+};
 
 const tourDates = [
   { date: 'NOV 12 · 2026', city: 'Atlanta, GA', venue: 'State Farm Arena' },
@@ -113,6 +120,7 @@ let fanState = { mood: 'dreamy', notes: [], theme: 'dark', motion: true };
 let supabase = null;
 let realtimeChannel = null;
 let presenceTimer = null;
+let scrollRevealObserver = null;
 let searchItems = [];
 
 function escapeHtml(value) {
@@ -228,6 +236,10 @@ function renderHome() {
             <button class="button button-quiet" type="button" data-page="discovery">Find your mood <span>→</span></button>
         </div>
       </div>
+      <figure class="home-hero-photo">
+        <img src="../images/${escapeHtml(dashboardPhoto.src)}" alt="${escapeHtml(dashboardPhoto.alt)}">
+        <figcaption><span>${escapeHtml(dashboardPhoto.caption)}</span><small>${escapeHtml(dashboardPhoto.attribution)}</small><button class="home-hero-source" type="button" data-external="${escapeHtml(dashboardPhoto.credit)}">PHOTO & LICENSE ↗</button></figcaption>
+      </figure>
       <div class="hero-era-sticker" aria-hidden="true">A WHOLE LOT OF<br><strong>FEELINGS</strong><br>✦ FOR THE FANS</div>
       <div class="hero-foot">THE DESKTOP EDITION · SIDE A</div>
     </section>
@@ -486,23 +498,65 @@ function renderProfile() {
   </section>`;
 }
 
+function lastActiveLabel(timestamp) {
+  if (!timestamp) return 'Last active unknown';
+  const parsed = Date.parse(timestamp);
+  if (Number.isNaN(parsed)) return 'Last active unknown';
+  const elapsed = Math.max(0, Date.now() - parsed);
+  if (elapsed < 120_000) return 'Last active just now';
+  const minutes = Math.floor(elapsed / 60_000);
+  if (minutes < 60) return `Last active ${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Last active ${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `Last active ${days}d ago`;
+  return `Last active ${new Date(parsed).toLocaleDateString()}`;
+}
+
 function personStatus(person) {
   const row = presence.get(person.user_id);
-  if (!row || row.status_mode === 'offline') return 'offline';
-  if (row.status_mode === 'do_not_disturb') return 'do not disturb';
-  if (row.status_mode === 'away') return 'away';
-  const lastActive = Date.parse(row.last_active_at);
-  return !Number.isNaN(lastActive) && Date.now() - lastActive < 5 * 60_000 ? 'online' : 'offline';
+  const lastActive = Date.parse(row?.last_active_at);
+  const recent = !Number.isNaN(lastActive) && Date.now() - lastActive < 2 * 60_000;
+  const mode = row?.status_mode || 'offline';
+  if (mode === 'offline') return { mode, label: 'Offline', detail: lastActiveLabel(row?.last_active_at) };
+  if (mode === 'do_not_disturb') return { mode, label: 'Do not disturb', detail: lastActiveLabel(row?.last_active_at) };
+  if (mode === 'away') return { mode, label: 'Away', detail: lastActiveLabel(row?.last_active_at) };
+  return recent
+    ? { mode: 'online', label: 'Online now', detail: 'Last active just now' }
+    : { mode: 'offline', label: 'Offline', detail: lastActiveLabel(row?.last_active_at) };
+}
+
+function onlineFanCount() {
+  return directory.filter(person => person.user_id !== currentUser?.id && personStatus(person).mode === 'online').length;
+}
+
+function otherFanCount() {
+  return directory.filter(person => person.user_id !== currentUser?.id).length;
+}
+
+function renderPresencePicker(id = 'presenceMode') {
+  const options = [
+    ['online', 'Online', 'Available to chat'],
+    ['away', 'Away', 'Stepping away'],
+    ['do_not_disturb', 'Do not disturb', 'Quiet mode'],
+    ['offline', 'Appear offline', 'Hide your online status']
+  ];
+  return `<label class="presence-control" for="${id}"><span class="presence-control-icon">✳</span><span class="presence-control-copy"><strong>Your status</strong><small>Visible to other fans</small></span><select class="presence-select" id="${id}" data-presence-mode>${options.map(([value, label, description]) => `<option value="${value}" ${currentMode === value ? 'selected' : ''}>${label} · ${description}</option>`).join('')}</select></label>`;
 }
 
 function renderPeopleList() {
-  if (!directory.length) return '<p class="panel-copy">No fan profiles to show yet.</p>';
-  return directory.filter(person => person.user_id !== currentUser?.id).map(person => {
+  const people = directory.filter(person => person.user_id !== currentUser?.id);
+  if (!people.length) return '<div class="people-empty"><span>✳</span><strong>Your fan circle is just getting started.</strong><small>Check back soon to meet other fans.</small></div>';
+  return people
+    .sort((first, second) => Number(personStatus(second).mode === 'online') - Number(personStatus(first).mode === 'online')
+      || first.display_name.localeCompare(second.display_name))
+    .map(person => {
     const status = personStatus(person);
-    const label = status === 'do not disturb' ? 'do not disturb' : status;
-    return `<button class="fan-row" type="button" data-open-peer="${escapeHtml(person.user_id)}">
+    const selected = currentPage === 'messages' && selectedPeer === person.user_id;
+    return `<button class="fan-row ${selected ? 'active' : ''}" type="button" data-open-peer="${escapeHtml(person.user_id)}" aria-pressed="${selected}">
       ${avatarMarkup(person.avatar_url, person.display_name)}
-      <span><strong>${escapeHtml(person.display_name)}</strong><small><i class="presence-dot ${status === 'away' ? 'away' : status === 'offline' ? 'offline' : ''}"></i> ${escapeHtml(label)}</small></span>
+      <span class="fan-row-copy"><strong>${escapeHtml(person.display_name)}</strong><small class="fan-status-label ${status.mode}"><i class="presence-dot ${status.mode}"></i>${escapeHtml(status.label)}</small><small class="fan-last-active">${escapeHtml(status.detail)}</small></span>
+      <span class="fan-row-arrow" aria-hidden="true">${selected ? '●' : '↗'}</span>
     </button>`;
   }).join('');
 }
@@ -512,8 +566,8 @@ function renderCommunity() {
   return `<section class="page-enter">
     <header class="page-heading"><div><p class="page-kicker">SAY IT WITH YOUR WHOLE CHEST</p><h1>The fan <em>circle.</em></h1></div><p class="page-heading-note">Good vibes, kind people, and all the songs<br>that hit a little too close.</p></header>
     <div class="chat-layout">
-      <section class="panel chat-main">
-        <div class="chat-topline"><span><p class="panel-label">LIVE GROUP CHAT</p><h2>Everybody’s here.</h2></span><small>Be kind. Keep it fan-friendly.</small></div>
+      <section class="panel chat-main social-card">
+        <div class="chat-topline"><span><p class="panel-label">THE GROUP ROOM · LIVE</p><h2>Everybody’s here.</h2><span class="room-presence" id="fanOnlineCount">✳ ${onlineFanCount()} fans online</span></span><small>Be kind. Keep it fan-friendly.</small></div>
         <div class="chat-messages" id="groupMessages" aria-live="polite"><div class="empty-state"><span>✳</span><p>Loading the fan circle…</p></div></div>
         <form class="chat-composer" id="groupForm">
           <div class="chat-compose-main"><label class="sr-only" for="groupMessage">Write a group message</label><input class="text-input" id="groupMessage" maxlength="500" placeholder="Say something lovely…"><button class="button button-primary" id="groupSend" type="submit">Send ↗</button></div>
@@ -521,9 +575,10 @@ function renderCommunity() {
         </form>
         <p class="form-status" id="groupStatus" role="status" aria-live="polite"></p>
       </section>
-      <aside class="panel chat-aside">
-        <div><p class="panel-label">YOUR PEOPLE</p><h2>Fan circle</h2><p class="panel-copy">Choose a fan to start a private conversation.</p></div>
-        <label class="field"><span>Your status</span><select class="presence-select" id="presenceMode"><option value="online">Online</option><option value="away">Away</option><option value="do_not_disturb">Do not disturb</option><option value="offline">Appear offline</option></select></label>
+      <aside class="panel chat-aside social-card">
+        <div class="people-heading"><p class="panel-label">YOUR PEOPLE</p><h2>Fan circle</h2><p class="panel-copy">Choose a fan to start a private conversation.</p></div>
+        ${renderPresencePicker()}
+        <div class="people-list-heading"><span>Fans</span><small>${otherFanCount()} profiles</small></div>
         <div class="fan-list" id="fanList">${renderPeopleList()}</div>
         <p class="form-status" id="peopleStatus" role="status"></p>
       </aside>
@@ -537,9 +592,12 @@ function renderDirectMessages() {
   return `<section class="page-enter">
     <header class="page-heading"><div><p class="page-kicker">PRIVATE BETWEEN YOU & THEM</p><h1>Your <em>messages.</em></h1></div><p class="page-heading-note">Select a fan to start a private conversation.<br>Only the two participants can read it.</p></header>
     <div class="message-layout">
-      <aside class="panel message-people"><p class="panel-label">FAN CIRCLE</p><div id="messagePeople">${renderPeopleList()}</div><p class="form-status" id="peopleStatus" role="status"></p></aside>
-      <section class="panel dm-panel">
-        <div class="chat-topline"><span><p class="panel-label">PRIVATE MESSAGE</p><h2 id="dmHeading">${selected ? escapeHtml(selected.display_name) : 'Choose a fan'}</h2></span>${selected ? `<small>${escapeHtml(personStatus(selected))}</small>` : ''}</div>
+      <aside class="panel message-people social-card"><div class="people-heading"><p class="panel-label">YOUR PEOPLE</p><h2>Messages</h2><p class="panel-copy">Private conversations between you and another fan.</p></div>
+        ${renderPresencePicker('dmPresenceMode')}
+        <div class="people-list-heading"><span>Fan circle</span><small>${otherFanCount()} profiles</small></div>
+        <div class="message-people-list" id="messagePeople">${renderPeopleList()}</div><p class="form-status" id="peopleStatus" role="status"></p></aside>
+      <section class="panel dm-panel social-card">
+        <div class="dm-header"><span class="dm-contact-avatar">${selected ? avatarMarkup(selected.avatar_url, selected.display_name) : '♡'}</span><span class="dm-contact-copy"><p class="panel-label">A PRIVATE LITTLE CORNER</p><h2 id="dmHeading">${selected ? escapeHtml(selected.display_name) : 'Choose a fan'}</h2><small id="dmPresenceLabel">${selected ? `<i class="presence-dot ${personStatus(selected).mode}"></i>${escapeHtml(personStatus(selected).label)} · ${escapeHtml(personStatus(selected).detail)}` : 'Only you and the other fan can read these messages.'}</small></span><span class="dm-lock">PRIVATE<br>CHAT</span></div>
         <div class="dm-scroll" id="dmMessages">${selected ? '<div class="empty-state"><span>♡</span><p>Loading your conversation…</p></div>' : '<div class="empty-state"><span>♡</span><p>Choose someone from the fan circle to say hello.</p></div>'}</div>
         <form class="chat-composer" id="dmForm">
           <div class="chat-compose-main"><label class="sr-only" for="dmMessage">Write a private message</label><input class="text-input" id="dmMessage" maxlength="500" placeholder="${selected ? 'Write a private message…' : 'Choose a fan first…'}" ${selected ? '' : 'disabled'}><button class="button button-primary" id="dmSend" type="submit" ${selected ? '' : 'disabled'}>Send ↗</button></div>
@@ -591,11 +649,15 @@ function renderPage(page = currentPage) {
     profile: renderProfile,
     settings: renderSettings
   };
+  if (scrollRevealObserver) {
+    scrollRevealObserver.disconnect();
+    scrollRevealObserver = null;
+  }
   pageHost.innerHTML = renderers[currentPage]();
+  observeScrollReveals();
   $('#contentScroll').scrollTo({ top: 0, behavior: fanState.motion ? 'smooth' : 'auto' });
   if (currentPage === 'tour') updateCountdowns();
   if (currentPage === 'community' && currentUser) {
-    $('#presenceMode').value = currentMode;
     void loadGroupMessages();
     void loadCommunityDirectory().catch(error => setInlineStatus(`Could not load the fan list: ${error.message}`, '#peopleStatus'));
   }
@@ -610,6 +672,30 @@ function renderPage(page = currentPage) {
       $('#appVersion').textContent = versionLabel;
     }).catch(error => setStatus(`Could not load the app version: ${error.message}`));
   }
+}
+
+function observeScrollReveals(root = pageHost) {
+  const elements = $$('.page-heading, .panel, .home-hero, .era-card, .clip-card, .polaroid, .tour-card, .track-row, .mood-panel, .discovery-card, .chat-message, .dm-bubble, .fan-row', root);
+  if (!fanState.motion || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+    elements.forEach(element => element.classList.add('scroll-reveal-visible'));
+    return;
+  }
+  if (!scrollRevealObserver) {
+    scrollRevealObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('scroll-reveal-visible');
+        scrollRevealObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.08 });
+  }
+  elements.forEach((element, index) => {
+    if (element.dataset.revealBound) return;
+    element.dataset.revealBound = 'true';
+    element.style.setProperty('--reveal-delay', `${Math.min(index * 38, 190)}ms`);
+    element.classList.add('scroll-reveal');
+    scrollRevealObserver.observe(element);
+  });
 }
 
 async function loadFanState() {
@@ -960,9 +1046,21 @@ async function loadCommunityDirectory() {
   directory = profilesResult.data;
   presence = new Map(presenceResult.data.map(item => [item.user_id, item]));
   currentMode = presence.get(currentUser.id)?.status_mode || currentMode;
-  if (currentPage === 'community' && $('#fanList')) $('#fanList').innerHTML = renderPeopleList();
-  if (currentPage === 'community' && $('#presenceMode')) $('#presenceMode').value = currentMode;
-  if (currentPage === 'messages' && $('#messagePeople')) $('#messagePeople').innerHTML = renderPeopleList();
+  $$('[data-presence-mode]').forEach(select => { select.value = currentMode; });
+  if (currentPage === 'community' && $('#fanList')) {
+    $('#fanList').innerHTML = renderPeopleList();
+    $('#fanOnlineCount').textContent = `✳ ${onlineFanCount()} fans online`;
+    observeScrollReveals($('#fanList'));
+  }
+  if (currentPage === 'messages' && $('#messagePeople')) {
+    $('#messagePeople').innerHTML = renderPeopleList();
+    observeScrollReveals($('#messagePeople'));
+    const selected = directory.find(person => person.user_id === selectedPeer);
+    if (selected && $('#dmPresenceLabel')) {
+      const state = personStatus(selected);
+      $('#dmPresenceLabel').innerHTML = `<i class="presence-dot ${state.mode}"></i>${escapeHtml(state.label)} · ${escapeHtml(state.detail)}`;
+    }
+  }
   if (currentPage === 'community' && $('#groupMessages')) void loadGroupMessages();
 }
 
@@ -1015,6 +1113,7 @@ async function fetchGroupMessages() {
     </article>`;
   }).join('') : '<div class="empty-state"><span>✳</span><p>Be the first to say hello.</p></div>';
   list.scrollTop = list.scrollHeight;
+  observeScrollReveals(list);
 }
 
 async function loadGroupMessages() {
@@ -1114,6 +1213,7 @@ async function fetchDirectMessages() {
       <p>${escapeHtml(message.body)}</p>${attachmentMarkup(message.attachment_path, message.attachment_name)}<time>${escapeHtml(timeLabel(message.created_at))}</time>
     </article>`).join('') : '<div class="empty-state"><span>♡</span><p>Start the conversation with a kind hello.</p></div>';
   list.scrollTop = list.scrollHeight;
+  observeScrollReveals(list);
 }
 
 async function loadDirectMessages() {
@@ -1461,7 +1561,7 @@ document.addEventListener('change', event => {
     playlistSelector.value = '';
     return;
   }
-  if (event.target.id === 'presenceMode') {
+  if (event.target.matches('[data-presence-mode]')) {
     void touchPresence(event.target.value).then(() => loadCommunityDirectory())
       .catch(error => setInlineStatus(`Could not update your status: ${error.message}`, '#peopleStatus'));
     return;
