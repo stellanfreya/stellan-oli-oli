@@ -15,9 +15,9 @@ Repository: <https://github.com/stellanfreya/stellan-oli-oli>
 
 Select **Download Windows App** on the website to download the Windows installer (`.exe`) from GitHub Releases. Run it to add Stellan Oli Oli to the Start menu and optionally create a desktop shortcut.
 
-The app has its own animated desktop experience with album-era browsing, a local Oliclips player and photo diary, account-linked favorites and playlists, live fan chat and private messages, a custom profile, and app-only appearance settings. Private journal notes stay on that computer. The website remains unchanged and can still be opened in its own app window.
+The app has its own animated desktop experience with album-era browsing, a local Oliclips player and photo diary, account-linked favorites and playlists, live fan chat and private messages, a custom profile, and app-only appearance settings. The dashboard photo is by Raph_PH under CC BY 2.0, displayed as a framed crop ([source and license](https://commons.wikimedia.org/wiki/File:OlivaRO2150524_(8)_(53727178201)_(cropped).jpg)). Private journal notes stay on that computer. The website remains unchanged and can still be opened in its own app window.
 
-To build the installer locally, run `npm ci` followed by `npm run dist:win` on Windows. Pushing a tag like `app-v1.2.0` builds and publishes the installer automatically.
+To build the installer locally, run `npm ci` followed by `npm run dist:win` on Windows. Pushing a tag like `app-v1.2.1` builds and publishes the installer automatically.
 
 ## Accounts
 
